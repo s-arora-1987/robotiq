@@ -2,7 +2,7 @@
 
 <launch>
   <arg name="gripper_name" default="gripper" />
-  <arg name="min_gap" default="-0.017" />
+  <arg name="min_gap" default="0.0" />
   <arg name="max_gap" default="0.085" /> <!-- meters -->
   <arg name="min_effort" default="30.0" />
   <arg name="max_effort" default="100.0" />
@@ -27,6 +27,10 @@
     <param name="input_topic" type="str" value="$(arg gripper_name)/input"/>
     <param name="output_topic" type="str" value="$(arg gripper_name)/output"/>
 
+  </node>
+
+  <node name="joint_state_publisher" pkg="robotiq_2f_gripper_joint_state_publisher" type="robotiq_2f_gripper_joint_states" >
+    <remap from="input" to="$(arg gripper_name)/input" />
   </node>
 
 </launch>

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>robotiq_2f_gripper_joint_state_publisher</name>
+  <version>1.0.0</version>
+  <description>Publishes joint states of Robotiq 2F gripper</description>
+  <maintainer email="kbogert@unca.edu">Kenneth Bogert</maintainer>
+  <license>3-clause BSD</license>
+  <author email="kbogert@unca.edu">Kenneth Bogert</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>roslib</depend>
+  <depend>sensor_msgs</depend>
+  <depend>robotiq_2f_gripper_control</depend>
+
+  <build_depend>message_generation</build_depend>
+  
+  <exec_depend>message_runtime</exec_depend>
+
+
+</package>
