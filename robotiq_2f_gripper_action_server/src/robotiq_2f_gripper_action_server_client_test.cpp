@@ -12,6 +12,9 @@ int main (int argc, char **argv)
   std::string gripper_name;
   pnh.param<std::string>("gripper_name", gripper_name, "gripper");
 
+  double pos;
+  pnh.param<double>("position", pos, -0.01);
+
   // create the action client
   // true causes the client to spin its own thread
   actionlib::SimpleActionClient<control_msgs::GripperCommandAction> ac(gripper_name, true);
@@ -23,7 +26,7 @@ int main (int argc, char **argv)
   ROS_INFO("Action server started, sending goal.");
   // send a goal to the action
   control_msgs::GripperCommandGoal goal;
-  goal.command.position = -0.01;
+  goal.command.position = pos;
   goal.command.max_effort = 100.0;
   ac.sendGoal(goal);
 

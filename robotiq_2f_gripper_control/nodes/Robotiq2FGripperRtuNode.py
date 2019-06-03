@@ -61,11 +61,14 @@ def mainLoop(device):
 
     rospy.init_node('robotiq2FGripper')
 
-    #The Gripper status is published on the topic named 'Robotiq2FGripperRobotInput'
-    pub = rospy.Publisher('Robotiq2FGripperRobotInput', inputMsg.Robotiq2FGripper_robot_input)
+    inputTopic = rospy.get_param('~input_topic', 'Robotiq2FGripperRobotInput')
+    outputTopic = rospy.get_param('~output_topic', 'Robotiq2FGripperRobotOutput')
 
-    #The Gripper command is received from the topic named 'Robotiq2FGripperRobotOutput'
-    rospy.Subscriber('Robotiq2FGripperRobotOutput', outputMsg.Robotiq2FGripper_robot_output, gripper.refreshCommand)
+    #The Gripper status is published on the topic by default named 'Robotiq2FGripperRobotInput'
+    pub = rospy.Publisher(inputTopic, inputMsg.Robotiq2FGripper_robot_input)
+
+    #The Gripper command is received from the topic by default named 'Robotiq2FGripperRobotOutput'
+    rospy.Subscriber(outputTopic, outputMsg.Robotiq2FGripper_robot_output, gripper.refreshCommand)
     
 
     #We loop
