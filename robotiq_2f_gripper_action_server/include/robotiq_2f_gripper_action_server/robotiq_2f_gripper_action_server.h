@@ -41,6 +41,7 @@ struct Robotiq2FGripperParams
   double max_gap_;
   double min_effort_; // N / (Nm)
   double max_effort_;
+  double speed_; // percent
 };
 
 /**

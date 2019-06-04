@@ -25,7 +25,7 @@ namespace
     result.rACT = 0x1; // active gripper
     result.rGTO = 0x1; // go to position
     result.rATR = 0x0; // No emergency release
-    result.rSP = 128; // Middle ground speed
+    result.rSP = 255 * params.speed_;
     
     if (goal.command.position > params.max_gap_ || goal.command.position < params.min_gap_)
     {

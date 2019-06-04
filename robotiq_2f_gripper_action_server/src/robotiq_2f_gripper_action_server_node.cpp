@@ -10,6 +10,7 @@ namespace
     params.max_gap_ = 0.085;
     params.min_effort_ = 40.0; // This is a guess. Could not find data with quick search.
     params.max_effort_ = 100.0;
+    params.speed_ = 0.5;
 
     return params;
   }
@@ -34,6 +35,7 @@ int main(int argc, char** argv)
   private_nh.param<double>("max_gap", cparams.max_gap_, cparams.max_gap_);
   private_nh.param<double>("min_effort", cparams.min_effort_, cparams.min_effort_);
   private_nh.param<double>("max_effort", cparams.max_effort_, cparams.max_effort_);
+  private_nh.param<double>("speed", cparams.speed_, cparams.speed_);
 
   ROS_INFO("Initializing Robotiq action server for gripper: %s", gripper_name.c_str());
 

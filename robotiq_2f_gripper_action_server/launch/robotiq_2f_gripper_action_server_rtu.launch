@@ -6,6 +6,7 @@
   <arg name="max_gap" default="0.085" /> <!-- meters -->
   <arg name="min_effort" default="30.0" />
   <arg name="max_effort" default="100.0" />
+  <arg name="speed" default="0.5" />
   <arg name="serial_port" default="/dev/ttyUSB0"/>
 
   <node name="robotiq_2f_gripper_action_server" pkg="robotiq_2f_gripper_action_server"
@@ -15,6 +16,7 @@
     <param name="max_gap" type="double" value="$(arg max_gap)" />
     <param name="min_effort" type="double" value="$(arg min_effort)" />
     <param name="max_effort" type="double" value="$(arg max_effort)" />
+    <param name="speed" type="double" value="$(arg speed)" />
 
     <remap from="input" to="$(arg gripper_name)/input" />
     <remap from="output" to="$(arg gripper_name)/output" />
@@ -30,6 +32,10 @@
   </node>
 
   <node name="joint_state_publisher" pkg="robotiq_2f_gripper_joint_state_publisher" type="robotiq_2f_gripper_joint_states" >
+
+    <param name="max_robotiq_value" type="int" value="229" />
+    <param name="max_rotation_radians" type="double" value="0.8" />
+
     <remap from="input" to="$(arg gripper_name)/input" />
   </node>
 

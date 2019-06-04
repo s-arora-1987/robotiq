@@ -24,11 +24,11 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-/** @file robotiq_3f_gripper_joint_states.cpp
- *  Subscribes to Robotiq state messages on "Robotiq3FGripperRobotInput" topic, converts the data to joint values,
- *  and publishes sensor_msgs/JointState messages on "joint_states" topic for Robotiq 3F gripper.
+/** @file robotiq_2f_gripper_joint_states.cpp
+ *  Subscribes to Robotiq state messages on the input topic, converts the data to joint values,
+ *  and publishes sensor_msgs/JointState messages on "joint_states" topic for Robotiq 2F gripper.
  * 
- *  'rosrun robotiq_3f_gripper_joint_state_publisher robotiq_3f_gripper_joint_states <gripper_prefix>'
+ *  'rosrun robotiq_2f_gripper_joint_state_publisher robotiq_2f_gripper_joint_states <gripper_prefix>'
  * 
  *  @author jack.thompson(at)utexas.edu
  *  @author karl.kruusamae(at)utexas.edu
@@ -45,6 +45,8 @@
 
 std::vector<double> joint_positions;
 
+double max_joint_rotation_radians;
+int max_robotiq_joint_value;
 
 /**
  * Callback function for "Robotiq3FGripperRobotInput" topic.
@@ -52,7 +54,7 @@ std::vector<double> joint_positions;
 void callback(const robotiq_2f_gripper_control::Robotiq2FGripper_robot_input::ConstPtr &msg) {
   int pos = msg->gPO;
 
-  joint_positions.at(0)  = ( (double)(pos) / 229) * (0.8) ;
+  joint_positions.at(0)  = ( (double)(pos) / max_robotiq_joint_value) * max_joint_rotation_radians;
 }
 
 /**
@@ -69,6 +71,8 @@ int main(int argc, char *argv[]) {
   // set user-specified prefix
   std::string gripper_prefix;
   pnh.param<std::string>("prefix", gripper_prefix, "");
+  pnh.param<int>("max_robotiq_value", max_robotiq_joint_value, 229);
+  pnh.param<double>("max_rotation_radians", max_joint_rotation_radians, 0.8);
 
 
   joint_positions.resize(1, 0.0);
