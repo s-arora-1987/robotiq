@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <gazebo>
+    <plugin name="robotiq2f" filename="libRobotiq2fPlugin.so">
+        <loop_joint name="left_loop_joint" parent="left_knuckle_dummy_link" child="left_inner_finger"/>
+        <loop_joint name="right_loop_joint" parent="right_knuckle_dummy_link" child="right_inner_finger"/>
+    </plugin>
+    <plugin name="mimic_joint" filename="libroboticsgroup_gazebo_mimic_joint_plugin.so">
+	<joint>finger_joint</joint>
+	<mimicJoint>right_outer_knuckle_joint</mimicJoint>
+	<hasPID/>
+    </plugin>
+  </gazebo>
+
+  <link name="world"/>
+  <joint name="fixingModelInPlace" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <parent link="world" />
+      <child link="robotiq_arg2f_base_link" />
+  </joint>
+
+</robot>
+

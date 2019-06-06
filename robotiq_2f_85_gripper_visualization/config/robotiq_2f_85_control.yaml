@@ -1,0 +1,16 @@
+/gazebo_ros_control:
+  pid_gains:
+    finger_joint:
+      p: 20
+      i: 0.01
+      d: 0.05
+
+    finger_joint_velocity:
+      p: 0.5
+      i: 5.0
+      d: 0.0
+
+    right_outer_knuckle_joint:
+      p: 10.0
+      i: 0.01
+      d: 0.05
