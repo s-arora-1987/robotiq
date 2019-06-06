@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>robotiq_2f_gripper_gazebo</name>
+  <version>1.0.0</version>
+  <description>Launch files for spawning the Robotiq robotiq-2f-gripper</description>
+
+  <maintainer email="kbogert@unca.edu">Kenneth Bogert</maintainer>
+  <author email="kbogert@unca.edu">Kenneth Bogert</author>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <exec_depend>gazebo_ros</exec_depend>
+  <exec_depend>robotiq_2f_gripper_visualization</exec_depend>
+
+</package>

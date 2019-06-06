@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<launch>
+
+  <rosparam file="$(find robotiq_2f_85_gripper_visualization)/config/robotiq_2f_85_control.yaml" command="load"/>
+
+  <!-- startup simulated world --> 
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" default="worlds/empty.world"/>
+    <arg name="paused" value="false"/>
+  </include>
+
+  <!-- upload gripper urdf to robot_description -->
+  <include file="$(find robotiq_2f_85_gripper_visualization)/launch/2f_85_model.launch">
+  </include>
+
+  <node name="joint_state_publisher" pkg="robotiq_2f_gripper_joint_state_publisher" type="robotiq_2f_gripper_joint_states">
+      <remap from="input" to="/gripper/input"/>
+  </node>
+
+  <!-- Start the publisher for the gripper -->
+  <node pkg="robot_state_publisher" type="state_publisher" name="robotiq_2f_gripper_robot_state_publisher">
+    <param name="publish_frequency" type="double" value="50.0" />
+  </node>
+
+
+  <!-- spawn in gazebo -->
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot -z 0.1" respawn="false" output="screen" />
+
+</launch> 

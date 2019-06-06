@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>robotiq_2f_gripper_gazebo_plugins</name>
+  <version>1.0.0</version>
+  <description>The Robotiq 2f gripper gazebo plugins package. Based upon the 3 finger gazebo plugins package.  This package will provide the same interface to the gripper as one would have if they were interfacing with hardware. Porting code from software to reality should be seamless with this ROS interface now. </description>
+
+  <maintainer email="kbogert@unca.edu">Kenneth Bogert</maintainer>
+  <license>Apache 2.0</license>
+  <author email="kbogert@unca.edu">Kenneth Bogert</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>trajectory_msgs</depend>
+  <depend>control_msgs</depend>
+  <depend>image_transport</depend>
+  <depend>tf</depend>
+  <depend>actionlib</depend>
+  <depend>gazebo_plugins</depend>
+  <depend>gazebo_ros</depend>
+  <depend>gazebo_msgs</depend>
+  <depend>robotiq_2f_gripper_control</depend>
+
+  <build_depend>angles</build_depend>
+  <build_depend>message_generation</build_depend>
+
+  <exec_depend>message_runtime</exec_depend>
+
+</package>
