@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   // set user-specified prefix
   std::string gripper_prefix;
   pnh.param<std::string>("prefix", gripper_prefix, "");
-  pnh.param<int>("max_robotiq_value", max_robotiq_joint_value, 229);
+  pnh.param<int>("max_robotiq_value", max_robotiq_joint_value, 255);
   pnh.param<double>("max_rotation_radians", max_joint_rotation_radians, 0.8);
 
 
