@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://ros.org/wiki/xacro">
-  <xacro:include filename="$(find robotiq_2f_85_gripper_visualization)/urdf/robotiq_arg2f_transmission.xacro" />
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+<!--  <xacro:include filename="$(find robotiq_2f_85_gripper_visualization)/urdf/robotiq_arg2f_transmission.xacro" /> -->
 
   <xacro:macro name="outer_knuckle" params="prefix fingerprefix stroke">
     <link name="${prefix}${fingerprefix}_outer_knuckle">
@@ -142,9 +142,9 @@
       <parent link="${prefix}robotiq_arg2f_base_link" />
       <child link="${prefix}${fingerprefix}_inner_knuckle" />
       <axis xyz="1 0 0" />
-      <limit lower="0" upper="1.0" velocity="2.0" effort="1000" />
+      <limit lower="0" upper="1.0" velocity="2.0" effort="220" />
       <mimic joint="${prefix}finger_joint" multiplier="1" offset="0" />
-   </joint> 
+   </joint>
    <link name="${prefix}${fingerprefix}_knuckle_dummy_link" >
       <inertial>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -173,7 +173,7 @@
       <parent link="${prefix}${fingerprefix}_inner_knuckle" />
       <child link="${prefix}${fingerprefix}_knuckle_dummy_link" />
       <axis xyz="1 0 0" />
-      <limit lower="-3.14" upper="3.14" velocity="2.0" effort="1000" />
+      <limit lower="-3.14" upper="3.14" velocity="2.0" effort="220" />
     </joint> 
   </xacro:macro>
 
@@ -183,7 +183,7 @@
       <parent link="${prefix}${fingerprefix}_outer_finger" />
       <child link="${prefix}${fingerprefix}_inner_finger" />
       <axis xyz="1 0 0" />
-      <limit lower="-3.14" upper="3.14" velocity="2.0" effort="1000" />
+      <limit lower="-3.14" upper="3.14" velocity="2.0" effort="220" />
       <mimic joint="${prefix}finger_joint" multiplier="-1" offset="0" />
     </joint>
   </xacro:macro>
@@ -205,9 +205,7 @@
       <parent link="${prefix}robotiq_arg2f_base_link" />
       <child link="${prefix}left_outer_knuckle" />
       <axis xyz="1 0 0" />
-      <limit lower="0" upper="0.8" velocity="2.0" effort="1000" />
-      <position_effort_min>-1</position_effort_min>
-      <position_effort_max>1</position_effort_max>
+      <limit lower="0" upper="0.8" velocity="2.0" effort="220" />
     </joint>
     <xacro:finger_joints prefix="${prefix}" fingerprefix="left" reflect="1.0"/>
   </xacro:macro>
@@ -218,7 +216,7 @@
       <parent link="${prefix}robotiq_arg2f_base_link" />
       <child link="${prefix}right_outer_knuckle" />
       <axis xyz="1 0 0" />
-      <limit lower="0" upper="0.81" velocity="2.0" effort="1000" />
+      <limit lower="0" upper="0.81" velocity="2.0" effort="220" />
       <mimic joint="${prefix}finger_joint" multiplier="1" offset="0" />
     </joint>
     <xacro:finger_joints prefix="${prefix}" fingerprefix="right" reflect="-1.0"/>
@@ -231,6 +229,6 @@
     <xacro:finger_links prefix="${prefix}" fingerprefix="right" stroke="85"/>
     <xacro:finger_joint prefix="${prefix}"/>
     <xacro:right_outer_knuckle_joint prefix="${prefix}"/>
-    <xacro:robotiq_arg2f_transmission prefix="${prefix}"/>
+<!--    <xacro:robotiq_arg2f_transmission prefix="${prefix}"/>-->
   </xacro:macro>
 </robot>

@@ -34,6 +34,7 @@
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/common/Time.hh>
 #include <gazebo/physics/physics.hh>
+#include <robotiq_2f_gripper_gazebo_plugins/Robotiq2fGripperConfig.h>
 
 /// \brief A plugin that implements the Robotiq 2-Finger Adaptative Gripper.
 /// The plugin exposes the next parameters via SDF tags:
@@ -89,6 +90,9 @@ class Robotiq2fPlugin : public gazebo::ModelPlugin
   /// \brief Publish Robotiq Hand state.
   private: void GetAndPublishHandleState();
 
+  /// \brief Publish Robotiq Joint state.
+  private: void GetAndPublishJointState(const gazebo::common::Time &_curTime);
+
   /// \brief Update the controller.
   private: void UpdateStates();
 
@@ -105,6 +109,9 @@ class Robotiq2fPlugin : public gazebo::ModelPlugin
   /// \brief Checks if the hand is fully open.
   /// return True when all the fingers are fully open or false otherwise.
   private: bool IsHandFullyOpen();
+  
+  /// \brief Dynamic Reconfigure callback
+  private: void dynamic_reconfigure_callback(robotiq_2f_gripper_gazebo_plugins::Robotiq2fGripperConfig &config, uint32_t level);
 
   /// \brief Internal helper to get the object detection value.
   /// \param[in] _joint Finger joint.
@@ -161,9 +168,6 @@ class Robotiq2fPlugin : public gazebo::ModelPlugin
   /// reached its target (rad).
   private: static constexpr double PoseTolerance = 0.002;
 
-  /// \brief Max. joint effort, made up number
-  private: static constexpr double MaxEffort = 10;
-
   /// \brief Max. joint speed (rad/s). Finger is 125mm and tip speed is 110mm/s.
   private: static constexpr double MaxVelocity = 1.6;
 
@@ -175,6 +179,10 @@ class Robotiq2fPlugin : public gazebo::ModelPlugin
 
   /// \brief ROS NodeHandle.
   private: boost::scoped_ptr<ros::NodeHandle> rosNode;
+
+  /// \brief Dynamic Reconfigure ROS NodeHandle.
+  private: boost::scoped_ptr<ros::NodeHandle> dynReconRosNode;
+  private: boost::scoped_ptr<dynamic_reconfigure::Server<robotiq_2f_gripper_gazebo_plugins::Robotiq2fGripperConfig>> srv_;
 
   /// \brief ROS callback queue.
   private: ros::CallbackQueue rosQueue;

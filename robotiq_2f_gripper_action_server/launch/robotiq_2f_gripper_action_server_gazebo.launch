@@ -22,6 +22,9 @@
 
   </node>
 
+<!-- publish joint states of dummy nodes -->
+
+
 
 <!--  <node name="joint_state_publisher" pkg="robotiq_2f_gripper_joint_state_publisher" type="robotiq_2f_gripper_joint_states" >
 

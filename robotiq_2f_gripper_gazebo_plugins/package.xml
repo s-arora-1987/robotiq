@@ -23,6 +23,7 @@
   <depend>gazebo_ros</depend>
   <depend>gazebo_msgs</depend>
   <depend>robotiq_2f_gripper_control</depend>
+  <depend>dynamic_reconfigure</depend>
 
   <build_depend>angles</build_depend>
   <build_depend>message_generation</build_depend>

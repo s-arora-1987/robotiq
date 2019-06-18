@@ -25,6 +25,9 @@
 #include <vector>
 #include <math.h>
 
+#include <dynamic_reconfigure/server.h>
+#include <robotiq_2f_gripper_gazebo_plugins/Robotiq2fGripperConfig.h>
+
 /*
 
 Due to necessity, I had to change the PID.hh file's definition from private members to public to allow public access of its members. They're private in 1.9 and getter functions aren't implemented until gazebo 3.0. I thought that was silly, and so I hacked around it. The functions directly access the private members by necessity. It can only change if Gazebo patches 1.9 and 2.2 to include getters for it.
@@ -51,9 +54,9 @@ Robotiq2fPlugin::Robotiq2fPlugin()
   // PID default parameters.
   for (int i = 0; i < this->NumJoints; ++i)
   {
-    this->posePID[i].Init(1, 0.0, 0.2, 0, 0.0, 60.0, -60.0);
+    this->posePID[i].Init(1, 0.01, 0.0, this->MaxVelocity, -this->MaxVelocity, this->MaxVelocity, -this->MaxVelocity);
     this->posePID[i].SetCmd(0.0);
-    this->velPID[i].Init(1, 0.0, 0.2, 0, 0.0, 60.0, -60.0);
+    this->velPID[i].Init(1, 0.01, 0.0, 220, -220.0, 220.0, -220.0);
     this->velPID[i].SetCmd(0.0);
   }
 
@@ -68,6 +71,7 @@ Robotiq2fPlugin::~Robotiq2fPlugin()
   gazebo::event::Events::DisconnectWorldUpdateBegin(this->updateConnection);
 #endif
   this->rosNode->shutdown();
+  this->dynReconRosNode->shutdown();
   this->rosQueue.clear();
   this->rosQueue.disable();
   this->callbackQueueThread.join();
@@ -88,17 +92,17 @@ void Robotiq2fPlugin::Load(gazebo::physics::ModelPtr _parent,
 
   gzlog << "Prior to iterating.." << std::endl;
   // Initialize joint state vector.
-  this->jointStates.name.resize(this->jointNames.size());
-  this->jointStates.position.resize(this->jointNames.size());
-  this->jointStates.velocity.resize(this->jointNames.size());
-  this->jointStates.effort.resize(this->jointNames.size());
+  this->jointStates.name.resize(this->jointNames.size()-1);
+  this->jointStates.position.resize(this->jointNames.size()-1);
+  this->jointStates.velocity.resize(this->jointNames.size()-1);
+  this->jointStates.effort.resize(this->jointNames.size()-1);
   gzlog << "About to iterate things.." << std::endl;
-  for (size_t i = 0; i < this->jointNames.size(); ++i)
+  for (size_t i = 1; i < this->jointNames.size(); ++i)
   {
-    this->jointStates.name[i] = this->jointNames[i];
-    this->jointStates.position[i] = 0;
-    this->jointStates.velocity[i] = 0;
-    this->jointStates.effort[i] = 0;
+    this->jointStates.name[i-1] = this->jointNames[i];
+    this->jointStates.position[i-1] = 0;
+    this->jointStates.velocity[i-1] = 0;
+    this->jointStates.effort[i-1] = 0;
   }
   gzlog << "Initialized the joint state vector" << std::endl;
 
@@ -109,64 +113,13 @@ void Robotiq2fPlugin::Load(gazebo::physics::ModelPtr _parent,
 
   for (int i = 0; i < this->NumJoints; ++i)
   {
-    ros::NodeHandle model_nh;
-    const ros::NodeHandle nh(model_nh, std::string("/gazebo_ros_control/pid_gains/") + this->jointNames[i]);
-
-    double tempDouble;
-    if (nh.getParam("p", tempDouble)) {
-    	posePID[i].SetPGain(tempDouble);
-    }
-    if (nh.getParam("i", tempDouble)) {
-    	posePID[i].SetIGain(tempDouble);
-    }
-    if (nh.getParam("d", tempDouble)) {
-    	posePID[i].SetDGain(tempDouble);
-    }
 
     // Set the PID effort limits.
-    this->posePID[i].SetCmdMin(-this->joints[i]->GetEffortLimit(0));
-    this->posePID[i].SetCmdMax(this->joints[i]->GetEffortLimit(0));
-
-    // Overload the PID parameters if they are available.
-    if (this->sdf->HasElement("kp_position"))
-      this->posePID[i].SetPGain(this->sdf->Get<double>("kp_position"));
-
-    if (this->sdf->HasElement("ki_position"))
-      this->posePID[i].SetIGain(this->sdf->Get<double>("ki_position"));
-
-    if (this->sdf->HasElement("kd_position"))
-    {
-      this->posePID[i].SetDGain(this->sdf->Get<double>("kd_position"));
-      std::cout << "dGain after overloading: " << this->posePID[i].dGain
-                << std::endl;
-    }
-
-    if (this->sdf->HasElement("position_effort_min"))
-      this->posePID[i].SetCmdMin(this->sdf->Get<double>("position_effort_min"));
-
-    if (this->sdf->HasElement("position_effort_max"))
-      this->posePID[i].SetCmdMax(this->sdf->Get<double>("position_effort_max"));
+    this->velPID[i].SetCmdMin(-this->joints[i]->GetEffortLimit(0));
+    this->velPID[i].SetCmdMax(this->joints[i]->GetEffortLimit(0));
 
   }
 
-  // repeat for velocity PIDs
-  for (int i = 0; i < this->NumJoints; ++i)
-  {
-    ros::NodeHandle model_nh;
-    const ros::NodeHandle nh(model_nh, std::string("/gazebo_ros_control/pid_gains/") + this->jointNames[i] + std::string("_velocity"));
-
-    double tempDouble;
-    if (nh.getParam("p", tempDouble)) {
-    	velPID[i].SetPGain(tempDouble);
-    }
-    if (nh.getParam("i", tempDouble)) {
-    	velPID[i].SetIGain(tempDouble);
-    }
-    if (nh.getParam("d", tempDouble)) {
-    	velPID[i].SetDGain(tempDouble);
-    }
-
-  }
   // Overload the ROS topics for the hand if they are available.
   if (this->sdf->HasElement("topic_command"))
     controlTopicName = this->sdf->Get<std::string>("topic_command");
@@ -193,6 +146,15 @@ void Robotiq2fPlugin::Load(gazebo::physics::ModelPtr _parent,
   this->pubHandleStateQueue = this->pmq.addPub<robotiq_2f_gripper_control::Robotiq2FGripper_robot_input>();
   this->pubHandleState = this->rosNode->advertise<robotiq_2f_gripper_control::Robotiq2FGripper_robot_input>(
     stateTopicName, 100, true);
+
+  std::string jointStateTopicName = std::string("joint_states");
+  if (this->sdf->HasElement("joint_states"))
+    jointStateTopicName = this->sdf->Get<std::string>("joint_states");
+
+
+  // Broadcast joint state.
+  this->pubJointStatesQueue = this->pmq.addPub<sensor_msgs::JointState>();
+  this->pubJointStates = this->rosNode->advertise<sensor_msgs::JointState>(jointStateTopicName, 10);
 
   // Subscribe to user published handle control commands.
   ros::SubscribeOptions handleCommandSo =
@@ -279,11 +241,23 @@ void Robotiq2fPlugin::Load(gazebo::physics::ModelPtr _parent,
 
   }
 
+  // Setup Dynamic Reconfigure
+  dynamic_reconfigure::Server<robotiq_2f_gripper_gazebo_plugins::Robotiq2fGripperConfig>::CallbackType f;
+
+  f = boost::bind(&Robotiq2fPlugin::dynamic_reconfigure_callback, this, _1, _2);
+
+  this->dynReconRosNode.reset(new ros::NodeHandle("/gazebo_ros_control/pid_gains/finger_joint"));
+  this->srv_.reset(new dynamic_reconfigure::Server<robotiq_2f_gripper_gazebo_plugins::Robotiq2fGripperConfig>(*(this->dynReconRosNode)));
+  this->srv_->setCallback(f);
 
   // Initialize gripper
 
   handleCommand.rACT = 1;
+  handleCommand.rATR = 0;
   handleCommand.rGTO = 1;
+  handleCommand.rPR = 0;
+  handleCommand.rSP = 255;
+
 
   // Log information.
   gzlog << "Robotiq2fPlugin loaded" << std::endl;
@@ -303,6 +277,19 @@ void Robotiq2fPlugin::Load(gazebo::physics::ModelPtr _parent,
   gzlog << "Topic for sending hand commands: ["   << controlTopicName
         << "]\nTopic for receiving hand state: [" << stateTopicName
         << "]" << std::endl;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+void Robotiq2fPlugin::dynamic_reconfigure_callback(robotiq_2f_gripper_gazebo_plugins::Robotiq2fGripperConfig &config, uint32_t level) {
+
+    posePID[0].SetPGain(config.finger_p);
+    posePID[0].SetIGain(config.finger_i);
+    posePID[0].SetDGain(config.finger_d);
+    velPID[0].SetPGain(config.finger_velocity_p);
+    velPID[0].SetIGain(config.finger_velocity_i);
+    velPID[0].SetDGain(config.finger_velocity_d);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -457,6 +444,10 @@ void Robotiq2fPlugin::UpdateStates()
     // Gather robot state data and publish them.
     this->GetAndPublishHandleState();
 
+    // Publish joint states.
+    this->GetAndPublishJointState(curTime);
+
+
     this->lastControllerUpdateTime = curTime;
   }
 }
@@ -594,6 +585,24 @@ void Robotiq2fPlugin::GetAndPublishHandleState()
   this->pubHandleStateQueue->push(this->handleState, this->pubHandleState);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void Robotiq2fPlugin::GetAndPublishJointState(
+                                           const gazebo::common::Time &_curTime)
+{
+  this->jointStates.header.stamp = ros::Time(_curTime.sec, _curTime.nsec);
+  for (size_t i = 1; i < this->joints.size(); ++i)
+  {
+#if GAZEBO_MAJOR_VERSION >= 9
+    this->jointStates.position[i-1] = this->joints[i]->Position(0);
+#else
+    this->jointStates.position[i-1] = this->joints[i]->GetAngle(0).Radian();
+#endif
+    this->jointStates.velocity[i-1] = this->joints[i]->GetVelocity(0);
+    // better to use GetForceTorque dot joint axis
+    this->jointStates.effort[i-1] = this->joints[i]->GetForce(0u);
+  }
+  this->pubJointStatesQueue->push(this->jointStates, this->pubJointStates);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 void Robotiq2fPlugin::UpdatePIDControl(double _dt)
@@ -609,9 +618,7 @@ void Robotiq2fPlugin::UpdatePIDControl(double _dt)
   for (int i = 0; i < this->NumJoints; ++i)
   {
     double targetPose = 0.0;
-    double targetSpeed = this->MaxVelocity * this->handleCommand.rSP / 255.0;
-    double targetEffort = this->MaxEffort;
-
+    double maxSpeed = this->MaxVelocity * this->handleCommand.rSP / 255.0;
 
 #if GAZEBO_MAJOR_VERSION >= 9
     targetPose = this->joints[i]->LowerLimit(0) +
@@ -635,12 +642,13 @@ void Robotiq2fPlugin::UpdatePIDControl(double _dt)
     double poseError = currentPose - targetPose;
 
     // Update the position PID.
-    double speed = gazebo::math::clamp(this->posePID[i].Update(poseError, _dt), -targetSpeed, targetSpeed);
+    double targetSpeed = gazebo::math::clamp(this->posePID[i].Update(poseError, _dt), -maxSpeed, maxSpeed);
 
-    double velocityError = this->joints[i]->GetVelocity(0) - speed;
+    double velocityError = this->joints[i]->GetVelocity(0) - targetSpeed;
 
-    double torque = gazebo::math::clamp(this->velPID[i].Update(velocityError, _dt), -targetEffort, targetEffort);
+    double torque = this->velPID[i].Update(velocityError, _dt);
  
+//    ROS_INFO("Speed %f VelocityErr %f Torque %f", targetSpeed, velocityError, torque);
 
     // Apply the PID command.
     this->joints[i]->SetForce(0, torque);
@@ -674,6 +682,19 @@ bool Robotiq2fPlugin::FindJoints()
   if (!this->GetAndPushBackJoint("finger_joint", this->joints))
     return false;
   this->jointNames.push_back("finger_joint");
+
+
+
+  std::string joint_name = "left_inner_knuckle_dummy_joint";
+  if (!this->GetAndPushBackJoint(joint_name, this->joints))
+    return false;
+  this->jointNames.push_back(joint_name);
+
+  joint_name = "right_inner_knuckle_dummy_joint";
+  if (!this->GetAndPushBackJoint(joint_name, this->joints))
+    return false;
+  this->jointNames.push_back(joint_name);
+
 
   gzlog << "Robotiq2fPlugin found all joints for gripper" << std::endl;
   return true;
