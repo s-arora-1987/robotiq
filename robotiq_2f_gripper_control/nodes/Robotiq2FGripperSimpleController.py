@@ -134,7 +134,7 @@ def publisher():
     """Main loop which requests new commands and publish them on the Robotiq2FGripperRobotOutput topic."""
     rospy.init_node('Robotiq2FGripperSimpleController')
     
-    pub = rospy.Publisher('Robotiq2FGripperRobotOutput', outputMsg.Robotiq2FGripper_robot_output)
+    pub = rospy.Publisher('/gripper/output', outputMsg.Robotiq2FGripper_robot_output)
 
     command = outputMsg.Robotiq2FGripper_robot_output();
 
@@ -149,3 +149,4 @@ def publisher():
 
 if __name__ == '__main__':
     publisher()
+
