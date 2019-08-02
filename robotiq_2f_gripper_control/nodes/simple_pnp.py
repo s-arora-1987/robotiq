@@ -11,10 +11,12 @@ from math import pi
 from time import sleep
 from std_msgs.msg import String
 from moveit_commander.conversions import pose_to_list
-from simple_pnp_gripper import gripper_open, gripper_close
+from gripper_to_position import gripper_to_pos
 from gazebo_msgs.srv import (
     SpawnModel,
     DeleteModel,
+    SpawnModelRequest,
+    SpawnModelResponse
 )
 from geometry_msgs.msg import (
     PoseStamped,
@@ -22,6 +24,11 @@ from geometry_msgs.msg import (
     Point,
     Quaternion,
 )
+
+from copy import deepcopy
+from tf.transformations import quaternion_from_euler
+
+## END_SUB_TUTORIAL
 
 def all_close(goal, actual, tolerance):
   """
@@ -54,7 +61,7 @@ class MoveGroupPythonIntefaceTutorial(object):
 
     moveit_commander.roscpp_initialize(joint_state_topic)
     rospy.init_node('simple_pnp',
-                    anonymous=True)
+                    anonymous=True, disable_signals=False)
     moveit_commander.roscpp_initialize(sys.argv)
 
     ## Instantiate a `RobotCommander`_ object. This object is the outer-level interface to
@@ -97,7 +104,6 @@ class MoveGroupPythonIntefaceTutorial(object):
     print ""
 
     # Misc variables
-    self.box_name = ''
     self.robot = robot
     self.scene = scene
     self.group = group
@@ -158,92 +164,46 @@ class MoveGroupPythonIntefaceTutorial(object):
    
     group.execute(plan, wait=True)
 
-
-  def wait_for_state_update(self, box_is_known=False, box_is_attached=False, timeout=4):
-    # Copy class variables to local variables to make the web tutorials more clear.
-    # In practice, you should use the class variables directly unless you have a good
-    # reason not to.
-    box_name = self.box_name
-    scene = self.scene
-
-    
-    start = rospy.get_time()
-    seconds = rospy.get_time()
-    while (seconds - start < timeout) and not rospy.is_shutdown():
-      # Test if the box is in attached objects
-      attached_objects = scene.get_attached_objects([box_name])
-      is_attached = len(attached_objects.keys()) > 0
-
-      # Test if the box is in the scene.
-      # Note that attaching the box will remove it from known_objects
-      is_known = box_name in scene.get_known_object_names()
-
-      # Test if we are in the expected state
-      if (box_is_attached == is_attached) and (box_is_known == is_known):
-        return True
-
-      # Sleep so that we give other threads time on the processor
-      rospy.sleep(0.1)
-      seconds = rospy.get_time()
-
-    # If we exited the while loop without returning then we timed out
-    return False
-    
-
-def load_gazebo_models(
-                       block_pose=Pose(position=Point(x=1.0, y=1.0, z=1.0)),
-                       block_reference_frame="world"):
-  # Get Models' Path
-  model_path = rospkg.RosPack().get_path('robotiq_2f_gripper_control')+"/models/"
-
-  # Load Block URDF
-  block_xml = ''
-  with open (model_path + "block/model.urdf", "r") as block_file:
-    block_xml=block_file.read().replace('\n', '')
-
-    # Spawn Block URDF
-  rospy.wait_for_service('/gazebo/spawn_urdf_model')
-  try:
-    spawn_urdf = rospy.ServiceProxy('/gazebo/spawn_urdf_model', SpawnModel)
-    resp_urdf = spawn_urdf("block", block_xml, "/",
-                               block_pose, block_reference_frame)
-  except rospy.ServiceException, e:
-    rospy.logerr("Spawn URDF service call failed: {0}".format(e))
-
-def delete_gazebo_models():
-
-  try:
-    delete_model = rospy.ServiceProxy('/gazebo/delete_model', DeleteModel)
-    resp_delete = delete_model("block")
-  except rospy.ServiceException, e:
-    print("Delete Model service call failed: {0}".format(e))
-
 def main():
   try:
-    tester = MoveGroupPythonIntefaceTutorial()
+    #moveit_commander.roscpp_initialize(joint_state_topic)
+    rospy.init_node('simple_pnp',
+                    anonymous=True, disable_signals=False)
+    #moveit_commander.roscpp_initialize(sys.argv)
+    #tester = MoveGroupPythonIntefaceTutorial()
     pose_list = []
+    # 255 = closed, 0 = open
+    gripper_to_pos(255, 60, 200, False)    # ACTIVATION STEP
+    gripper_to_pos(255, 60, 200, False)
+    """tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,
+                             0.74, 0.02, 0.25)
+
+    rospy.sleep(1.0)
+
     tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,
-                             0.7, 0.0, 0.1)
-    #load_gazebo_models()
+                             0.74, 0.02, 0.1)
 
-    gripper_close()
+    gripper_to_pos(100, 60, 200, False)
+
+    rospy.sleep(1.0)
 
     tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,
-                             0.7, 0.0, -0.09)
+                             0.74, 0.02, 0.25)
+    
+    rospy.sleep(1.0)
 
-    """sleep(2)
+    tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,
+                             0.9, 0.02, 0.25)
 
-    gripper_close()
+    rospy.sleep(1.0)
 
-    sleep(2)
+    tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,
+                             0.9, 0.02, 0.1)
 
-    tester.go_to_pose_goal(0.9990483, 0.0, 0.0, 0.0436175,
-                             0.7, 0.5, 0.1)
+    gripper_to_pos(0, 60, 200, False)
 
-    sleep(2)
-
-    gripper_open()"""
-
+    tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,
+                             0.74, 0.02, 0.25)"""
   except rospy.ROSInterruptException:
     delete_gazebo_models()
     return
