@@ -166,44 +166,32 @@ class MoveGroupPythonIntefaceTutorial(object):
 
 def main():
   try:
-    #moveit_commander.roscpp_initialize(joint_state_topic)
-    rospy.init_node('simple_pnp',
-                    anonymous=True, disable_signals=False)
-    #moveit_commander.roscpp_initialize(sys.argv)
-    #tester = MoveGroupPythonIntefaceTutorial()
+    
+    tester = MoveGroupPythonIntefaceTutorial()
     pose_list = []
     # 255 = closed, 0 = open
-    gripper_to_pos(255, 60, 200, False)    # ACTIVATION STEP
-    gripper_to_pos(255, 60, 200, False)
-    """tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,
+    gripper_to_pos(0, 60, 200, False)    # ACTIVATION STEP
+    gripper_to_pos(0, 60, 200, False)
+    
+    tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,
                              0.74, 0.02, 0.25)
-
     rospy.sleep(1.0)
-
     tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,
                              0.74, 0.02, 0.1)
-
     gripper_to_pos(100, 60, 200, False)
-
     rospy.sleep(1.0)
-
     tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,
                              0.74, 0.02, 0.25)
     
     rospy.sleep(1.0)
-
     tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,
-                             0.9, 0.02, 0.25)
-
+                             -0.4, 0.02, 0.25)
     rospy.sleep(1.0)
-
     tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,
-                             0.9, 0.02, 0.1)
-
+                             -0.4, 0.02, 0.15)
     gripper_to_pos(0, 60, 200, False)
 
-    tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,
-                             0.74, 0.02, 0.25)"""
+    
   except rospy.ROSInterruptException:
     delete_gazebo_models()
     return

@@ -6,10 +6,6 @@ from robotiq_2f_gripper_control.msg import _Robotiq2FGripper_robot_output  as ou
 from robotiq_2f_gripper_control.msg import _Robotiq2FGripper_robot_input  as inputMsg
 from time import sleep
 
-def activate_gripper():
-	command.rACT = 1
-
-
 def gripper_to_pos(position, force, speed, hp):
 	
     hp_g = True
