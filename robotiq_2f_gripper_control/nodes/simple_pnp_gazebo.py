@@ -168,7 +168,7 @@ def create_cube_request(modelname, px, py, pz, rr, rp, ry, sx, sy, sz):
     @param: sz: Cube size on z-axis
     """
 
-    USERNAME = 'micahreich'    # Name of your user on your PC ... I'm not sure of an alternative to absolute paths
+    USERNAME = 'psuresh'    # Name of your user on your PC ... I'm not sure of an alternative to absolute paths
 
     with open('/home/' + USERNAME + '/catkin_ws/src/robotiq/robotiq_2f_gripper_control/models/cube.sdf', 'r') as file:
       sdf_cube = file.read().replace('\n', '')
@@ -209,7 +209,7 @@ def main():
     # Spawn object 1
     rospy.loginfo("Spawning cube1")
     req1 = create_cube_request("cube1",
-                              0.7, 0.0, 0.77,  # position
+                              0.7, 0.0, 0.80,  # position
                               0.0, 0.0, 0.0,  # rotation
                               0.0762, 0.0762, 0.0762)  # size
     spawn_srv.call(req1)
@@ -220,33 +220,37 @@ def main():
     sleep(1.0)
 
     tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,    # GO TO WAYPOINT 1 (HOVER POS)
-                             0.67, -0.01, 0.15)
+                             0.7, 0.01, 0.15)
 
     sleep(1.0)
 
     tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,    # GO TO WAYPOINT 2 (PLUNGE AND PICK)
-                             0.67, -0.01, -0.12)
+                             0.7, 0.01, -0.1)
+    sleep(0.5)
 
     gripper_to_pos(50, 60, 200, False)    # GRIPPER TO POSITION 50
-
+    
     os.system('cd ~/catkin_ws/ | rosrun gazebo_ros_link_attacher attach.py')    # ATTACH CUBE AND SAWYER EEF
 
-    sleep(1.0)
+    sleep(2.0)
 
     tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,    # GO TO WAYPOINT 3 (TRAVEL TO PLACE DESTINATION)
-                             0.67, 0.04, 0.15)
+                             0.7, 0.04, 0.15)
 
     sleep(1.0)
 
     tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,    # GO TO WAYPOINT 4 (PLACE)
-                             0.8, 0.3, -0.05)
+                             0.8, 0.3, -0.08)
 
     os.system('cd ~/catkin_ws/ | rosrun gazebo_ros_link_attacher detach.py')    # DETACH CUBE AND SAWYER EEF
 
     gripper_to_pos(0, 60, 200, False)    # OPEN GRIPPER
 
+    sleep(2.0)
+
     tester.go_to_pose_goal(1.0, 0.0, 0.0, 0.0000463,    # GO TO WAYPOINT 5 (RETURN TO HOVER POS)
-                             0.67, -0.01, 0.15)
+                             0.7, -0.01, 0.15)
+    
 
   except rospy.ROSInterruptException:
     delete_gazebo_models()
