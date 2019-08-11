@@ -1,0 +1,97 @@
+  def _approach(self, pose):
+      approach = copy.deepcopy(pose)
+      current_pose = self._limb.endpoint_pose()
+      # approach with a pose the hover-distance above the requested pose
+      approach.position.z = approach.position.z + self._hover_distance
+      #self._servo_to_pose(approach)
+      self.move_group.set_pose_target(approach)
+      plan = self.move_group.go(wait=True)
+      rospy.loginfo("Plan Executing: %d",plan)
+      
+  def _retract(self):
+      # retrieve current pose from endpoint
+      current_pose = self._limb.endpoint_pose()
+      ik_pose = Pose()
+      ik_pose.position.x = current_pose['position'].x
+      ik_pose.position.y = current_pose['position'].y
+      ik_pose.position.z = current_pose['position'].z + self._hover_distance
+      ik_pose.orientation.x = current_pose['orientation'].x
+      ik_pose.orientation.y = current_pose['orientation'].y
+      ik_pose.orientation.z = current_pose['orientation'].z
+      ik_pose.orientation.w = current_pose['orientation'].w
+      self.move_group.set_pose_target(ik_pose)
+      plan = self.move_group.go(wait=True)
+
+  def _servo_to_pose(self, pose, time=4.0, steps=400.0):
+      ''' An *incredibly simple* linearly-interpolated Cartesian move '''
+      r = rospy.Rate(1/(time/steps)) # Defaults to 100Hz command rate
+      current_pose = self._limb.endpoint_pose()
+      ik_delta = Pose()
+      ik_delta.position.x = (current_pose['position'].x - pose.position.x) / steps
+      ik_delta.position.y = (current_pose['position'].y - pose.position.y) / steps
+      ik_delta.position.z = (current_pose['position'].z - pose.position.z) / steps
+      ik_delta.orientation.x = (current_pose['orientation'].x - pose.orientation.x) / steps
+      ik_delta.orientation.y = (current_pose['orientation'].y - pose.orientation.y) / steps
+      ik_delta.orientation.z = (current_pose['orientation'].z - pose.orientation.z) / steps
+      ik_delta.orientation.w = (current_pose['orientation'].w - pose.orientation.w) / steps
+      for d in range(int(steps), -1, -1):
+          if rospy.is_shutdown():
+              return
+          ik_step = Pose()
+          ik_step.position.x = d*ik_delta.position.x + pose.position.x
+          ik_step.position.y = d*ik_delta.position.y + pose.position.y
+          ik_step.position.z = d*ik_delta.position.z + pose.position.z
+          ik_step.orientation.x = d*ik_delta.orientation.x + pose.orientation.x
+          ik_step.orientation.y = d*ik_delta.orientation.y + pose.orientation.y
+          ik_step.orientation.z = d*ik_delta.orientation.z + pose.orientation.z
+          ik_step.orientation.w = d*ik_delta.orientation.w + pose.orientation.w
+          joint_angles = self._limb.ik_request(ik_step, self._tip_name)
+          print("These are the joint angles I got: ",joint_angles)
+          if joint_angles:
+              self._limb.set_joint_positions(joint_angles)
+          else:
+              rospy.logerr("No Joint Angles provided for move_to_joint_positions. Staying put.")
+          r.sleep()
+      rospy.sleep(1.0)
+
+  def pick(self, pose):
+      if rospy.is_shutdown():
+          return
+      # open the gripper
+      gripper_to_pos(0, 60, 200, False)    # ACTIVATION STEP
+      gripper_to_pos(0, 60, 200, False)    # OPEN GRIPPER
+      # servo above pose
+      self._approach(pose)
+      print("Approached successfully!")
+      sleep(1.0)
+      current_pose = self.move_group.get_current_pose().pose
+      self.move_group.set_pose_target(pose)
+      plan = self.move_group.go(wait=True)
+      sleep(1.0)
+      if rospy.is_shutdown():
+          return
+      # close gripper
+	  #os.system('rosrun gazebo_ros_link_attacher attach.py') # ATTACH CUBE AND SAWYER EEF
+      gripper_to_pos(50, 60, 200, False)    # CLOSE GRIPPER
+      # retract to clear object
+      self._retract()
+      sleep(1.0)
+
+  def place(self, pose):
+      if rospy.is_shutdown():
+          return
+      # servo above pose
+      self._approach(pose)
+      sleep(1.0)
+      current_pose = self.move_group.get_current_pose().pose
+      self.move_group.set_pose_target(pose)
+      plan = self.move_group.go(wait=True)
+      sleep(1.0)
+      if rospy.is_shutdown():
+          return
+      # open the gripper
+	  #os.system('rosrun gazebo_ros_link_attacher detach.py') # DETACH CUBE AND SAWYER EEF
+      gripper_to_pos(0, 60, 200, False)    # OPEN GRIPPER
+      # retract to clear object
+      self._retract()
+      sleep(1.0)

@@ -193,10 +193,8 @@ def main():
 
     
   except rospy.ROSInterruptException:
-    delete_gazebo_models()
     return
   except KeyboardInterrupt:
-    delete_gazebo_models()
     return
 
 if __name__ == '__main__':
