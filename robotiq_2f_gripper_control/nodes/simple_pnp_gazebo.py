@@ -12,7 +12,7 @@ from math import pi
 from time import sleep
 from std_msgs.msg import String
 from moveit_commander.conversions import pose_to_list
-from gripper_to_position import gripper_to_pos
+from gripper_to_position import gripper_to_pos, reset_gripper, activate_gripper
 from gazebo_msgs.srv import (
     SpawnModel,
     DeleteModel,
@@ -128,6 +128,9 @@ class PickAndPlace(object):
     """
 
     group = self.group
+    # Allow some leeway in position(meters) and orientation (radians)
+    group.set_goal_position_tolerance(0.01)
+    group.set_goal_orientation_tolerance(0.1) 
 
     pose_goal = geometry_msgs.msg.Pose()
     pose_goal.orientation.x = ox
@@ -138,8 +141,10 @@ class PickAndPlace(object):
     pose_goal.position.y = py
     pose_goal.position.z = pz
     group.set_pose_target(pose_goal)
-
+    group.allow_replanning(True)
+    group.set_planning_time(5) 
     plan = group.go(wait=True)
+    rospy.sleep(1)
     group.stop()
    
     group.clear_pose_targets()
@@ -210,6 +215,13 @@ def create_cube_request(modelname, px, py, pz, rr, rp, ry, sx, sy, sz):
 
     return req
 
+
+def delete_gazebo_models():
+    del_model = rospy.ServiceProxy('gazebo/delete_model', DeleteModel) # Handle to model spawner
+    rospy.wait_for_service('gazebo/delete_model')
+    del_model("cube1") # Remove from Gazebo
+    rospy.sleep(1)
+
 ##################################################################################################
 
 
@@ -227,8 +239,6 @@ def main():
                               0.705, 0.0, 0.80,  # position
                               0.0, 0.0, 0.0,  # rotation
                               0.0762, 0.0762, 0.0762)  # size
-    spawn_srv.call(req1)
-
     limb = 'right'
     hover_distance = 0.15 # meters
     # Starting Joint angles for right arm
@@ -250,25 +260,33 @@ def main():
     # Move to the desired starting angles
     print("Running. Ctrl-c to quit")
     pnp.move_to_start(starting_joint_angles)
+    
+    rospy.sleep(1)
 
-    gripper_to_pos(0, 60, 200, False)    # ACTIVATION STEP
+    spawn_srv.call(req1)	#Spawn cube now
+
+    reset_gripper()
+
+    activate_gripper()
+
+    # 255 = closed, 0 = open
     gripper_to_pos(0, 60, 200, False)    # OPEN GRIPPER
 
     sleep(1.0)
 
 
     pnp.go_to_pose_goal(0.7071029, 0.7071057, 0.0012299, 0.0023561,    # GO TO WAYPOINT 1 (HOVER POS)
-                             0.675, 0.0, 0.15)
+                             0.665, 0.0, 0.15)
 
     sleep(1.0)
 
     pnp.go_to_pose_goal(0.7071029, 0.7071057, 0.0012299, 0.0023561,    # GO TO WAYPOINT 2 (HOVER POS)
-                             0.675, 0.0, 0.002)
+                             0.665, 0.0, 0.002)
 
     sleep(1.0)
 
     pnp.go_to_pose_goal(0.7071029, 0.7071057, 0.0012299, 0.0023561,    # GO TO WAYPOINT 3 (PLUNGE AND PICK)
-                             0.675, 0.0, -0.0015)
+                             0.665, 0.0, -0.001)
     sleep(1.0)
 
     gripper_to_pos(50, 60, 200, False)    # GRIPPER TO POSITION 50
@@ -278,17 +296,17 @@ def main():
     sleep(1.0)
 
     pnp.go_to_pose_goal(0.7071029, 0.7071057, 0.0012299, 0.0023561,    # GO TO WAYPOINT 4 (TRAVEL TO PLACE DESTINATION)
-                             0.7, 0.04, 0.15)
+                             0.665, 0.04, 0.15)
 
     sleep(1.0)
 
     pnp.go_to_pose_goal(0.7071029, 0.7071057, 0.0012299, 0.0023561,    # GO TO WAYPOINT 5 (TRAVEL TO PLACE DESTINATION)
-                             0.7, 0.5, 0.01)
+                             0.665, 0.5, 0.02)
 
     sleep(1.0)
 
     pnp.go_to_pose_goal(0.7071029, 0.7071057, 0.0012299, 0.0023561,    # GO TO WAYPOINT 6 (PLACE)
-                             0.7, 0.5, -0.055)
+                             0.665, 0.5, -0.055)
 
     os.system('rosrun gazebo_ros_link_attacher detach.py')    # DETACH CUBE AND SAWYER EEF
 
@@ -297,7 +315,10 @@ def main():
     sleep(1.0)
 
     pnp.go_to_pose_goal(0.7071029, 0.7071057, 0.0012299, 0.0023561,    # GO TO WAYPOINT 7 (RETURN TO HOVER POS)
-                             0.7, 0.52, 0.12)
+                             0.665, 0.5, 0.12)
+    rospy.sleep(1.0)
+
+    delete_gazebo_models()
     
 
   except rospy.ROSInterruptException:
