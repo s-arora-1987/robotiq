@@ -10,7 +10,7 @@ import moveit_msgs.msg
 import geometry_msgs.msg
 from math import pi
 from time import sleep
-from std_msgs.msg import String
+from std_msgs.msg import String, Int8MultiArray
 from moveit_commander.conversions import pose_to_list
 from gripper_to_position import gripper_to_pos, reset_gripper, activate_gripper
 from gazebo_msgs.srv import (
@@ -33,6 +33,7 @@ import intera_interface
 from robotiq_2f_gripper_control.srv import move_robot,move_robotResponse
 import numpy
 from two_scara_collaboration.msg import cylinder_blocks_poses
+from gazebo_ros_link_attacher.srv import Attach, AttachRequest, AttachResponse
 
 ## END_SUB_TUTORIAL
 
@@ -500,7 +501,7 @@ def lowergripper(displacement_for_picking=0.01):
     # pnp._limb.endpoint_pose returns {'position': (x, y, z), 'orientation': (x, y, z, w)}
     # moving from z=-.02 to z=-0.1
     global overhead_orientation,pnp,target_location_x,target_location_y
-    z_array=[0.1,0.07,0.04]
+    z_array=[0.1,0.07,0.05]
 
     allow_replanning=False
     planning_time=MOTION_SAMPLE_TIME
@@ -697,13 +698,22 @@ def callback_poses(cylinder_poses_msg):
   current_cylinder_z = cylinder_poses_msg.z
   global target_location_x, target_location_y
   target_location_x = current_cylinder_x[onion_index]
-  target_location_y = current_cylinder_y[onion_index]+0.005
+  target_location_y = current_cylinder_y[onion_index]
   # print "target_location_x,target_location_y"+str((target_location_x,target_location_y))
   return 
 
 target_location_x = -100
 target_location_y = -100
 onion_index = 0
+req = AttachRequest()
+
+def callback_modelname(color_indices_msg):
+  global req, onion_index
+  if (color_indices_msg.data[onion_index]==0):
+    req.model_name_1 = "red_cylinder_" + str(onion_index);
+  else:
+    req.model_name_1 = "blue_cylinder_" + str(onion_index);    
+  return
 
 def main():
   try:
@@ -716,8 +726,19 @@ def main():
     global target_location_x,target_location_y,pnp
     hovertime=1.0
     rospy.Subscriber("cylinder_blocks_poses", cylinder_blocks_poses, callback_poses)
+    rospy.Subscriber("current_cylinder_blocks", Int8MultiArray, callback_modelname)
+    #attach and detach service
+    attach_srv = rospy.ServiceProxy('/link_attacher_node/attach', Attach)
+    attach_srv.wait_for_service()
+    detach_srv = rospy.ServiceProxy('/link_attacher_node/detach', Attach)
+    detach_srv.wait_for_service()
 
-    os.system('rosrun gazebo_ros_link_attacher detach.py')
+    req.link_name_1 = "base_link"
+    req.model_name_2 = "sawyer"
+    req.link_name_2 = "right_l6"
+
+    detach_srv.call(req)
+    # os.system('rosrun gazebo_ros_link_attacher detach.py')
     # print "liftgripper()"
     # liftgripper()
     
@@ -741,8 +762,8 @@ def main():
     gripper_to_pos(0, 60, 200, False)    # OPEN GRIPPER
     lowergripper()
     # sleep(5.0)
-
-    os.system('rosrun gazebo_ros_link_attacher attach.py')
+    attach_srv.call(req)
+    # os.system('rosrun gazebo_ros_link_attacher attach.py')
     sleep(2.0)
 
     print "liftgripper()"
@@ -759,7 +780,7 @@ def main():
     # goto_bin()
     # sleep(2.0)
 
-    # os.system('rosrun gazebo_ros_link_attacher detach.py')
+    detach_srv.call(req)
 
     ## ROLLING ##
 
@@ -893,3 +914,4 @@ if __name__ == '__main__':
   		main()
 	except rospy.ROSInterruptException:
 	    pass
+
