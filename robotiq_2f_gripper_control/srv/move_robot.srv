@@ -1,5 +1,5 @@
 # srv message to make Sawyer move to specific location around conveyor belt
 string primitive
-geometry_msgs/Point location
+int64 chosen_index
 ---
 bool success

@@ -1,0 +1,3 @@
+# srv message to update loc EE and loc Onion
+---
+int8[] locations
